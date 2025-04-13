@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MergeTexts Web App</title>
+    <link href="https://fonts.googleapis.com/css2?family=Manjali:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Manjali', sans-serif;
+        }
+        .drag-over {
+            border: 2px dashed #9370db; /* Lavender dashed border */
+            background-color: #f8f0fb; /* Light lavender background */
+        }
+        .bg-peach {
+            background-color: #ffe5d9; /* Peach background */
+        }
+        .text-peach {
+            color: #ffb703; /* Peach text */
+        }
+        .bg-soft-lavender {
+            background-color: #f8f0fb; /* Soft lavender background */
+        }
+        .text-soft-lavender {
+            color: #9370db; /* Soft lavender text */
+        }
+        .border-soft-lavender {
+            border-color: #e0b0ff; /* Soft lavender border */
+        }
+        .focus\:border-soft-lavender:focus {
+             border-color: #9370db; /* Soft lavender focus border */
+        }
+    </style>
+</head>
+<body class="bg-peach p-6">
+    <div class="container max-w-2xl mx-auto bg-white shadow-md rounded-lg p-8">
+        <h1 class="text-3xl font-semibold text-peach text-center mb-6">MergeTexts</h1>
+        <p class="text-gray-700 text-center mb-4">Combine your .txt and .md files with ease.</p>
+
+        <div id="file-upload-area" class="border-2 border-dashed border-soft-lavender rounded-lg p-6 text-center cursor-pointer mb-4
+                                            hover:border-soft-lavender transition duration-300 ease-in-out bg-soft-lavender">
+            <p class="text-gray-600">Drag and drop files here, or click to select files</p>
+            <input type="file" id="file-input" multiple class="hidden" accept=".txt,.md">
+        </div>
+
+        <div id="file-list-container" class="mb-4" style="display: none;">
+            <h2 class="text-xl font-semibold text-soft-lavender mb-3">Files to Merge</h2>
+            <ul id="file-list" class="space-y-2">
+                </ul>
+        </div>
+
+        <div id="merge-options" class="mb-4 p-4 bg-soft-lavender rounded-lg border border-soft-lavender" style="display: none;">
+            <h2 class="text-xl font-semibold text-soft-lavender mb-3">Merge Options</h2>
+            <div class="flex items-center mb-2">
+                <label for="separator" class="mr-2 text-gray-700">Separator:</label>
+                <input type="text" id="separator" value="\n\n" placeholder="Enter separator" class="shadow-sm border border-soft-lavender rounded-md py-2 px-3 focus:outline-none focus:border-soft-lavender w-48">
+            </div>
+            <div class="flex items-center mb-2">
+                <label for="output-format" class="mr-2 text-gray-700">Output Format:</label>
+                <select id="output-format" class="shadow-sm border border-soft-lavender rounded-md py-2 px-3 focus:outline-none focus:border-soft-lavender w-48">
+                    <option value="txt">.txt</option>
+                    <option value="md">.md</option>
+                </select>
+            </div>
+        </div>
+
+        <div id="progress-container" class="mb-4" style="display: none;">
+            <h2 class="text-xl font-semibold text-soft-lavender mb-3">Merging Progress</h2>
+            <div class="bg-gray-200 rounded-full h-2.5 mb-2">
+                <div id="progress-bar" class="bg-peach h-2.5 rounded-full" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+            </div>
+            <p id="progress-text" class="text-gray-600 text-sm">0%</p>
+        </div>
+
+        <div id="download-button-container" class="mt-6 text-center" style="display: none;">
+            <button id="merge-and-download" class="bg-peach hover:bg-pink-700 text-white font-bold py-2 px-6 rounded-full shadow-md focus:outline-none focus:shadow-outline transition duration-300 ease-in-out">
+                Merge and Download
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const fileInput = document.getElementById('file-input');
+        const fileList = document.getElementById('file-list');
+        const fileListContainer = document.getElementById('file-list-container');
+        const mergeOptionsContainer = document.getElementById('merge-options');
+        const mergeAndDownloadButton = document.getElementById('merge-and-download');
+        const downloadButtonContainer = document.getElementById('download-button-container');
+        const progressBar = document.getElementById('progress-bar');
+        const progressText = document.getElementById('progress-text');
+        const progressContainer = document.getElementById('progress-container');
+        const fileUploadArea = document.getElementById('file-upload-area');
+
+        let filesToMerge = [];
+
+        fileInput.addEventListener('change', handleFileSelect);
+        fileUploadArea.addEventListener('click', () => fileInput.click()); // Open file dialog on div click
+
+        // Drag and Drop Functionality
+        fileUploadArea.addEventListener('dragover', (event) => {
+            event.preventDefault();
+            fileUploadArea.classList.add('drag-over');
+        });
+
+        fileUploadArea.addEventListener('dragleave', (event) => {
+            event.preventDefault();
+            fileUploadArea.classList.remove('drag-over');
+        });
+
+        fileUploadArea.addEventListener('drop', (event) => {
+            event.preventDefault();
+            fileUploadArea.classList.remove('drag-over');
+            handleFileSelect(event);
+        });
+
+
+        function handleFileSelect(event) {
+            const newFiles = event.target.files || event.dataTransfer.files; // Handle both file input and drag/drop
+            if (newFiles && newFiles.length > 0) {
+                filesToMerge = [...filesToMerge, ...newFiles]; // Append new files
+                updateFileList();
+                fileListContainer.style.display = 'block';
+                mergeOptionsContainer.style.display = 'block';
+                downloadButtonContainer.style.display = 'block';
+                progressContainer.style.display = 'none'; // Hide progress initially
+            }
+        }
+
+        function updateFileList() {
+            fileList.innerHTML = ''; // Clear the list
+            filesToMerge.forEach((file, index) => {
+                const listItem = document.createElement('li');
+                listItem.className = "bg-soft-lavender rounded-md py-2 px-3 shadow-sm border border-soft-lavender flex items-center justify-between";
+                listItem.innerHTML = `<span class="text-gray-700">${file.name}</span>
+                                      <div class="flex items-center">
+                                        <button data-index="${index}" class="move-up-button bg-white hover:bg-gray-100 text-gray-600 font-semibold py-1 px-2 rounded-md focus:outline-none focus:shadow-outline mr-1">↑</button>
+                                        <button data-index="${index}" class="move-down-button bg-white hover:bg-gray-100 text-gray-600 font-semibold py-1 px-2 rounded-md focus:outline-none focus:shadow-outline">↓</button>
+                                        <button data-index="${index}" class="remove-button bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 rounded-md focus:outline-none focus:shadow-outline ml-2">×</button>
+                                      </div>`;
+                fileList.appendChild(listItem);
+            });
+
+            // Add event listeners to the buttons
+            addEventListenersToButtons();
+        }
+
+        function addEventListenersToButtons() {
+            const removeButtons = document.querySelectorAll('.remove-button');
+            const moveUpButtons = document.querySelectorAll('.move-up-button');
+            const moveDownButtons = document.querySelectorAll('.move-down-button');
+
+            removeButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const index = parseInt(button.dataset.index);
+                    filesToMerge.splice(index, 1);
+                    updateFileList();
+                    if (filesToMerge.length === 0) {
+                        fileListContainer.style.display = 'none';
+                        mergeOptionsContainer.style.display = 'none';
+                        downloadButtonContainer.style.display = 'none';
+                    }
+                });
+            });
+
+            moveUpButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const index = parseInt(button.dataset.index);
+                    if (index > 0) {
+                        const temp = filesToMerge[index];
+                        filesToMerge[index] = filesToMerge[index - 1];
+                        filesToMerge[index - 1] = temp;
+                        updateFileList();
+                    }
+                });
+            });
+
+            moveDownButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const index = parseInt(button.dataset.index);
+                    if (index < filesToMerge.length - 1) {
+                        const temp = filesToMerge[index];
+                        filesToMerge[index] = filesToMerge[index + 1];
+                        filesToMerge[index + 1] = temp;
+                        updateFileList();
+                    }
+                });
+            });
+        }
+
+        mergeAndDownloadButton.addEventListener('click', async () => {
+            if (filesToMerge.length === 0) {
+                alert('Please select files to merge.'); // Basic error handling
+                return;
+            }
+
+            const separator = document.getElementById('separator').value;
+            const outputFormat = document.getElementById('output-format').value;
+            const progressTextElement = document.getElementById('progress-text');
+
+
+            progressContainer.style.display = 'block';
+            let mergedContent = '';
+            let totalFiles = filesToMerge.length;
+            let filesProcessed = 0;
+
+            for (const file of filesToMerge) {
+                try{
+                    const reader = new FileReader();
+                    const fileContent = await new Promise((resolve, reject) => {
+                        reader.onload = () => resolve(reader.result);
+                        reader.onerror = reject;
+                        reader.readAsText(file);
+                    });
+
+                    mergedContent += fileContent;
+                    if (filesProcessed < totalFiles - 1) {
+                        mergedContent += separator;
+                    }
+                    filesProcessed++;
+                    let progress = Math.round((filesProcessed / totalFiles) * 100);
+                    progressBar.style.width = `${progress}%`;
+                    progressBar.setAttribute('aria-valuenow', progress);
+                    progressTextElement.textContent = `${progress}%`;
+
+                } catch (error){
+                    console.error("Error reading file", error);
+                    alert(`Error reading file: ${file.name}.  Skipping this file.`);
+                    filesProcessed++;
+                    let progress = Math.round((filesProcessed / totalFiles) * 100);
+                    progressBar.style.width = `${progress}%`;
+                    progressBar.setAttribute('aria-valuenow', progress);
+                    progressTextElement.textContent = `${progress}%`;
+                }
+
+            }
+
+
+            const blob = new Blob([mergedContent], { type: `text/${outputFormat}` });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `merged-text.${outputFormat}`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            progressBar.style.width = `0%`;
+            progressBar.setAttribute('aria-valuenow', 0);
+            progressTextElement.textContent = `0%`;
+            progressContainer.style.display = 'none';
+
+        });
+    </script>
+</body>
+</html>
+
