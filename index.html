@@ -3,257 +3,504 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MergeTexts Web App</title>
-    <link href="https://fonts.googleapis.com/css2?family=Manjali:wght@400;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>MergeTexts - Combine Text Files</title>
+    <link href="https://fonts.googleapis.com/css2?family=Manjari:wght@100;400;700&display=swap" rel="stylesheet">
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: 'Manjali', sans-serif;
+            font-family: 'Manjari', sans-serif;
+            background-color: #ffffff;
+            color: #2c3e50;
+            line-height: 1.6;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
-        .drag-over {
-            border: 2px dashed #9370db; /* Lavender dashed border */
-            background-color: #f8f0fb; /* Light lavender background */
+
+        /* Color scheme from image */
+        :root {
+            --forest-green: #2d5a4a;
+            --golden-yellow: #f4c430;
+            --lime-green: #9acd32;
+            --peach: #ffa07a;
+            --white: #ffffff;
+            --light-gray: #f8f9fa;
+            --border-gray: #e9ecef;
+            --text-dark: #2c3e50;
+            --text-muted: #6c757d;
         }
-        .bg-peach {
-            background-color: #ffe5d9; /* Peach background */
+
+        /* Navbar */
+        .navbar {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-gray);
+            position: sticky;
+            top: 0;
+            z-index: 100;
         }
-        .text-peach {
-            color: #ffb703; /* Peach text */
+
+        .navbar h1 {
+            color: var(--forest-green);
+            font-weight: 700;
+            font-size: 1.5rem;
         }
-        .bg-soft-lavender {
-            background-color: #f8f0fb; /* Soft lavender background */
+
+        .restart-btn {
+            background: var(--peach);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: 'Manjari', sans-serif;
+            font-weight: 400;
+            transition: all 0.3s ease;
         }
-        .text-soft-lavender {
-            color: #9370db; /* Soft lavender text */
+
+        .restart-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(255, 160, 122, 0.3);
         }
-        .border-soft-lavender {
-            border-color: #e0b0ff; /* Soft lavender border */
+
+        /* Main content */
+        .main-content {
+            flex: 1;
+            padding: 2rem;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
         }
-        .focus\:border-soft-lavender:focus {
-             border-color: #9370db; /* Soft lavender focus border */
+
+        .app-card {
+            background: var(--white);
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            padding: 2rem;
+            width: 100%;
+            max-width: 600px;
+            border: 1px solid var(--border-gray);
+        }
+
+        /* Upload area */
+        .upload-area {
+            border: 2px dashed var(--lime-green);
+            border-radius: 12px;
+            padding: 3rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: var(--light-gray);
+            margin-bottom: 2rem;
+        }
+
+        .upload-area:hover {
+            border-color: var(--golden-yellow);
+            background: #fcfcfc;
+        }
+
+        .upload-area.drag-over {
+            border-color: var(--forest-green);
+            background: rgba(45, 90, 74, 0.05);
+        }
+
+        .upload-icon {
+            font-size: 3rem;
+            color: var(--lime-green);
+            margin-bottom: 1rem;
+        }
+
+        .upload-text {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        /* File list */
+        .file-list {
+            margin-bottom: 2rem;
+        }
+
+        .file-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--light-gray);
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+            border-left: 4px solid var(--lime-green);
+        }
+
+        .file-info {
+            flex: 1;
+            margin-left: 1rem;
+        }
+
+        .file-name {
+            font-weight: 700;
+            color: var(--forest-green);
+        }
+
+        .file-size {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        .file-controls {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .control-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0.25rem;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+            font-size: 1.2rem;
+        }
+
+        .control-btn:hover {
+            background: rgba(0, 0, 0, 0.1);
+        }
+
+        .move-up { color: var(--golden-yellow); }
+        .move-down { color: var(--golden-yellow); }
+        .remove { color: var(--peach); }
+
+        /* Options */
+        .options {
+            margin-bottom: 2rem;
+        }
+
+        .option-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .option-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 700;
+            color: var(--forest-green);
+        }
+
+        .option-input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid var(--border-gray);
+            border-radius: 8px;
+            font-family: 'Manjari', sans-serif;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .option-input:focus {
+            outline: none;
+            border-color: var(--lime-green);
+        }
+
+        .option-select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid var(--border-gray);
+            border-radius: 8px;
+            font-family: 'Manjari', sans-serif;
+            font-size: 1rem;
+            background: white;
+            cursor: pointer;
+        }
+
+        /* Merge button */
+        .merge-btn {
+            width: 100%;
+            background: var(--forest-green);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 12px;
+            font-family: 'Manjari', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .merge-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(45, 90, 74, 0.3);
+        }
+
+        .merge-btn:disabled {
+            background: var(--text-muted);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* Footer */
+        .footer {
+            background: var(--light-gray);
+            text-align: center;
+            padding: 1rem;
+            color: var(--text-muted);
+            border-top: 1px solid var(--border-gray);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .navbar {
+                padding: 1rem;
+            }
+            
+            .main-content {
+                padding: 1rem;
+            }
+            
+            .app-card {
+                padding: 1.5rem;
+            }
+            
+            .upload-area {
+                padding: 2rem 1rem;
+            }
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .file-item {
+            animation: fadeIn 0.3s ease;
+        }
+
+        /* Hidden class */
+        .hidden {
+            display: none;
         }
     </style>
 </head>
-<body class="bg-peach p-6">
-    <div class="container max-w-2xl mx-auto bg-white shadow-md rounded-lg p-8">
-        <h1 class="text-3xl font-semibold text-peach text-center mb-6">MergeTexts</h1>
-        <p class="text-gray-700 text-center mb-4">Combine your .txt and .md files with ease.</p>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <h1>MergeTexts</h1>
+        <button class="restart-btn" onclick="restartApp()">Restart</button>
+    </nav>
 
-        <div id="file-upload-area" class="border-2 border-dashed border-soft-lavender rounded-lg p-6 text-center cursor-pointer mb-4
-                                            hover:border-soft-lavender transition duration-300 ease-in-out bg-soft-lavender">
-            <p class="text-gray-600">Drag and drop files here, or click to select files</p>
-            <input type="file" id="file-input" multiple class="hidden" accept=".txt,.md">
-        </div>
-
-        <div id="file-list-container" class="mb-4" style="display: none;">
-            <h2 class="text-xl font-semibold text-soft-lavender mb-3">Files to Merge</h2>
-            <ul id="file-list" class="space-y-2">
-                </ul>
-        </div>
-
-        <div id="merge-options" class="mb-4 p-4 bg-soft-lavender rounded-lg border border-soft-lavender" style="display: none;">
-            <h2 class="text-xl font-semibold text-soft-lavender mb-3">Merge Options</h2>
-            <div class="flex items-center mb-2">
-                <label for="separator" class="mr-2 text-gray-700">Separator:</label>
-                <input type="text" id="separator" value="\n\n" placeholder="Enter separator" class="shadow-sm border border-soft-lavender rounded-md py-2 px-3 focus:outline-none focus:border-soft-lavender w-48">
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="app-card">
+            <!-- Upload Area -->
+            <div class="upload-area" onclick="document.getElementById('fileInput').click()">
+                <div class="upload-icon">📁</div>
+                <div class="upload-text">
+                    Drag & drop your .txt or .md files here<br>
+                    or click to select files
+                </div>
+                <input type="file" id="fileInput" multiple accept=".txt,.md">
             </div>
-            <div class="flex items-center mb-2">
-                <label for="output-format" class="mr-2 text-gray-700">Output Format:</label>
-                <select id="output-format" class="shadow-sm border border-soft-lavender rounded-md py-2 px-3 focus:outline-none focus:border-soft-lavender w-48">
-                    <option value="txt">.txt</option>
-                    <option value="md">.md</option>
-                </select>
+
+            <!-- File List -->
+            <div class="file-list" id="fileList"></div>
+
+            <!-- Options -->
+            <div class="options" id="options" style="display: none;">
+                <div class="option-group">
+                    <label class="option-label" for="textDivider">Text Divider</label>
+                    <input type="text" id="textDivider" class="option-input" value="\n" placeholder="Enter divider (e.g., ---, \n)">
+                </div>
+
+                <div class="option-group">
+                    <label class="option-label" for="outputFormat">Output Format</label>
+                    <select id="outputFormat" class="option-select">
+                        <option value="txt">Plain Text (.txt)</option>
+                        <option value="md">Markdown (.md)</option>
+                    </select>
+                </div>
+
+                <div class="option-group">
+                    <label class="option-label" for="fileName">Export File Name</label>
+                    <input type="text" id="fileName" class="option-input" value="MergedFile" placeholder="Enter file name">
+                </div>
+
+                <button class="merge-btn" onclick="mergeAndDownload()">
+                    Merge and Download
+                </button>
             </div>
         </div>
+    </main>
 
-        <div id="progress-container" class="mb-4" style="display: none;">
-            <h2 class="text-xl font-semibold text-soft-lavender mb-3">Merging Progress</h2>
-            <div class="bg-gray-200 rounded-full h-2.5 mb-2">
-                <div id="progress-bar" class="bg-peach h-2.5 rounded-full" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
-            </div>
-            <p id="progress-text" class="text-gray-600 text-sm">0%</p>
-        </div>
-
-        <div id="download-button-container" class="mt-6 text-center" style="display: none;">
-            <button id="merge-and-download" class="bg-peach hover:bg-pink-700 text-white font-bold py-2 px-6 rounded-full shadow-md focus:outline-none focus:shadow-outline transition duration-300 ease-in-out">
-                Merge and Download
-            </button>
-        </div>
-    </div>
+    <!-- Footer -->
+    <footer class="footer">
+        <p>&copy; 2025 AppForge. All rights reserved.</p>
+    </footer>
 
     <script>
-        const fileInput = document.getElementById('file-input');
-        const fileList = document.getElementById('file-list');
-        const fileListContainer = document.getElementById('file-list-container');
-        const mergeOptionsContainer = document.getElementById('merge-options');
-        const mergeAndDownloadButton = document.getElementById('merge-and-download');
-        const downloadButtonContainer = document.getElementById('download-button-container');
-        const progressBar = document.getElementById('progress-bar');
-        const progressText = document.getElementById('progress-text');
-        const progressContainer = document.getElementById('progress-container');
-        const fileUploadArea = document.getElementById('file-upload-area');
+        let uploadedFiles = [];
 
-        let filesToMerge = [];
+        // File input change handler
+        document.getElementById('fileInput').addEventListener('change', handleFileSelect);
 
-        fileInput.addEventListener('change', handleFileSelect);
-        fileUploadArea.addEventListener('click', () => fileInput.click()); // Open file dialog on div click
-
-        // Drag and Drop Functionality
-        fileUploadArea.addEventListener('dragover', (event) => {
-            event.preventDefault();
-            fileUploadArea.classList.add('drag-over');
+        // Drag and drop handlers
+        const uploadArea = document.querySelector('.upload-area');
+        
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('drag-over');
         });
 
-        fileUploadArea.addEventListener('dragleave', (event) => {
-            event.preventDefault();
-            fileUploadArea.classList.remove('drag-over');
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('drag-over');
         });
 
-        fileUploadArea.addEventListener('drop', (event) => {
-            event.preventDefault();
-            fileUploadArea.classList.remove('drag-over');
-            handleFileSelect(event);
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('drag-over');
+            const files = Array.from(e.dataTransfer.files);
+            handleFiles(files);
         });
 
-
-        function handleFileSelect(event) {
-            const newFiles = event.target.files || event.dataTransfer.files; // Handle both file input and drag/drop
-            if (newFiles && newFiles.length > 0) {
-                filesToMerge = [...filesToMerge, ...newFiles]; // Append new files
-                updateFileList();
-                fileListContainer.style.display = 'block';
-                mergeOptionsContainer.style.display = 'block';
-                downloadButtonContainer.style.display = 'block';
-                progressContainer.style.display = 'none'; // Hide progress initially
-            }
+        function handleFileSelect(e) {
+            const files = Array.from(e.target.files);
+            handleFiles(files);
         }
 
-        function updateFileList() {
-            fileList.innerHTML = ''; // Clear the list
-            filesToMerge.forEach((file, index) => {
-                const listItem = document.createElement('li');
-                listItem.className = "bg-soft-lavender rounded-md py-2 px-3 shadow-sm border border-soft-lavender flex items-center justify-between";
-                listItem.innerHTML = `<span class="text-gray-700">${file.name}</span>
-                                      <div class="flex items-center">
-                                        <button data-index="${index}" class="move-up-button bg-white hover:bg-gray-100 text-gray-600 font-semibold py-1 px-2 rounded-md focus:outline-none focus:shadow-outline mr-1">↑</button>
-                                        <button data-index="${index}" class="move-down-button bg-white hover:bg-gray-100 text-gray-600 font-semibold py-1 px-2 rounded-md focus:outline-none focus:shadow-outline">↓</button>
-                                        <button data-index="${index}" class="remove-button bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 rounded-md focus:outline-none focus:shadow-outline ml-2">×</button>
-                                      </div>`;
-                fileList.appendChild(listItem);
-            });
+        function handleFiles(files) {
+            const validFiles = files.filter(file => 
+                file.type === 'text/plain' || 
+                file.name.endsWith('.txt') || 
+                file.name.endsWith('.md')
+            );
 
-            // Add event listeners to the buttons
-            addEventListenersToButtons();
-        }
-
-        function addEventListenersToButtons() {
-            const removeButtons = document.querySelectorAll('.remove-button');
-            const moveUpButtons = document.querySelectorAll('.move-up-button');
-            const moveDownButtons = document.querySelectorAll('.move-down-button');
-
-            removeButtons.forEach(button => {
-                button.addEventListener('click', () => {
-                    const index = parseInt(button.dataset.index);
-                    filesToMerge.splice(index, 1);
-                    updateFileList();
-                    if (filesToMerge.length === 0) {
-                        fileListContainer.style.display = 'none';
-                        mergeOptionsContainer.style.display = 'none';
-                        downloadButtonContainer.style.display = 'none';
-                    }
-                });
-            });
-
-            moveUpButtons.forEach(button => {
-                button.addEventListener('click', () => {
-                    const index = parseInt(button.dataset.index);
-                    if (index > 0) {
-                        const temp = filesToMerge[index];
-                        filesToMerge[index] = filesToMerge[index - 1];
-                        filesToMerge[index - 1] = temp;
-                        updateFileList();
-                    }
-                });
-            });
-
-            moveDownButtons.forEach(button => {
-                button.addEventListener('click', () => {
-                    const index = parseInt(button.dataset.index);
-                    if (index < filesToMerge.length - 1) {
-                        const temp = filesToMerge[index];
-                        filesToMerge[index] = filesToMerge[index + 1];
-                        filesToMerge[index + 1] = temp;
-                        updateFileList();
-                    }
-                });
-            });
-        }
-
-        mergeAndDownloadButton.addEventListener('click', async () => {
-            if (filesToMerge.length === 0) {
-                alert('Please select files to merge.'); // Basic error handling
+            if (validFiles.length === 0) {
+                alert('Please select only .txt or .md files.');
                 return;
             }
 
-            const separator = document.getElementById('separator').value;
-            const outputFormat = document.getElementById('output-format').value;
-            const progressTextElement = document.getElementById('progress-text');
-
-
-            progressContainer.style.display = 'block';
-            let mergedContent = '';
-            let totalFiles = filesToMerge.length;
-            let filesProcessed = 0;
-
-            for (const file of filesToMerge) {
-                try{
-                    const reader = new FileReader();
-                    const fileContent = await new Promise((resolve, reject) => {
-                        reader.onload = () => resolve(reader.result);
-                        reader.onerror = reject;
-                        reader.readAsText(file);
-                    });
-
-                    mergedContent += fileContent;
-                    if (filesProcessed < totalFiles - 1) {
-                        mergedContent += separator;
-                    }
-                    filesProcessed++;
-                    let progress = Math.round((filesProcessed / totalFiles) * 100);
-                    progressBar.style.width = `${progress}%`;
-                    progressBar.setAttribute('aria-valuenow', progress);
-                    progressTextElement.textContent = `${progress}%`;
-
-                } catch (error){
-                    console.error("Error reading file", error);
-                    alert(`Error reading file: ${file.name}.  Skipping this file.`);
-                    filesProcessed++;
-                    let progress = Math.round((filesProcessed / totalFiles) * 100);
-                    progressBar.style.width = `${progress}%`;
-                    progressBar.setAttribute('aria-valuenow', progress);
-                    progressTextElement.textContent = `${progress}%`;
+            validFiles.forEach(file => {
+                if (!uploadedFiles.find(f => f.name === file.name)) {
+                    uploadedFiles.push(file);
                 }
+            });
 
+            updateFileList();
+            document.getElementById('fileInput').value = '';
+        }
+
+        function updateFileList() {
+            const fileList = document.getElementById('fileList');
+            const options = document.getElementById('options');
+
+            if (uploadedFiles.length === 0) {
+                fileList.innerHTML = '';
+                options.style.display = 'none';
+                return;
             }
 
+            options.style.display = 'block';
 
-            const blob = new Blob([mergedContent], { type: `text/${outputFormat}` });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `merged-text.${outputFormat}`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
+            fileList.innerHTML = uploadedFiles.map((file, index) => `
+                <div class="file-item">
+                    <div class="file-info">
+                        <div class="file-name">${file.name}</div>
+                        <div class="file-size">${formatFileSize(file.size)}</div>
+                    </div>
+                    <div class="file-controls">
+                        <button class="control-btn move-up" onclick="moveFile(${index}, -1)" ${index === 0 ? 'disabled' : ''}>↑</button>
+                        <button class="control-btn move-down" onclick="moveFile(${index}, 1)" ${index === uploadedFiles.length - 1 ? 'disabled' : ''}>↓</button>
+                        <button class="control-btn remove" onclick="removeFile(${index})">✕</button>
+                    </div>
+                </div>
+            `).join('');
+        }
 
-            progressBar.style.width = `0%`;
-            progressBar.setAttribute('aria-valuenow', 0);
-            progressTextElement.textContent = `0%`;
-            progressContainer.style.display = 'none';
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
 
-        });
+        function moveFile(index, direction) {
+            const newIndex = index + direction;
+            if (newIndex < 0 || newIndex >= uploadedFiles.length) return;
+
+            [uploadedFiles[index], uploadedFiles[newIndex]] = [uploadedFiles[newIndex], uploadedFiles[index]];
+            updateFileList();
+        }
+
+        function removeFile(index) {
+            uploadedFiles.splice(index, 1);
+            updateFileList();
+        }
+
+        async function mergeAndDownload() {
+            if (uploadedFiles.length === 0) {
+                alert('Please upload at least one file.');
+                return;
+            }
+
+            const textDivider = document.getElementById('textDivider').value.replace(/\\n/g, '\n');
+            const outputFormat = document.getElementById('outputFormat').value;
+            const fileName = document.getElementById('fileName').value || 'MergedFile';
+
+            try {
+                const fileContents = await Promise.all(
+                    uploadedFiles.map(file => readFileContent(file))
+                );
+
+                const mergedContent = fileContents.join(textDivider);
+                
+                const blob = new Blob([mergedContent], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+                
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${fileName}.${outputFormat}`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+
+            } catch (error) {
+                alert('Error merging files: ' + error.message);
+            }
+        }
+
+        function readFileContent(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (e) => resolve(e.target.result);
+                reader.onerror = (e) => reject(new Error('Failed to read file: ' + file.name));
+                reader.readAsText(file);
+            });
+        }
+
+        function restartApp() {
+            uploadedFiles = [];
+            updateFileList();
+            document.getElementById('textDivider').value = '\\n';
+            document.getElementById('outputFormat').value = 'txt';
+            document.getElementById('fileName').value = 'MergedFile';
+        }
     </script>
 </body>
 </html>
-
